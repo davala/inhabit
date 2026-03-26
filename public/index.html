@@ -59,6 +59,11 @@
       border-radius: 10px;
       position: relative;
       background-color: var(--bg);
+    }
+
+    .page {
+      padding: 4rem 2rem 6rem;
+      min-height: 100vh;
       background-image:
         repeating-linear-gradient(
           transparent,
@@ -66,12 +71,7 @@
           var(--line-color) calc(var(--line-height) - 1px),
           var(--line-color) var(--line-height)
         );
-      background-attachment: fixed;
-    }
-
-    .page {
-      padding: 4rem 2rem 6rem;
-      min-height: 100vh;
+      background-attachment: scroll;
     }
 
     /* Stage visibility */
@@ -197,7 +197,7 @@
 
     #start-over a {
       font-family: 'Caveat', cursive;
-      font-size: 1rem;
+      font-size: 1.35rem;
       color: var(--muted);
       text-decoration: underline;
       text-underline-offset: 3px;
@@ -508,8 +508,9 @@
   });
 
   document.getElementById('reflection-continue').addEventListener('click', () => {
-    // App goes quiet
-    document.getElementById('reflection-textarea').style.display = 'none';
+    // App goes quiet — keep textarea text visible, remove interactivity
+    const reflTextarea = document.getElementById('reflection-textarea');
+    reflTextarea.disabled = true;
     document.getElementById('reflection-continue').style.display = 'none';
     document.getElementById('start-over').style.display = 'block';
   });
