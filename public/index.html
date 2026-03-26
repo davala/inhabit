@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inhabit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --line-height: 2rem;
+      --bg: #faf8f3;
+      --line-color: #c8bfa8;
+      --text: #2a2318;
+      --muted: #9c8e78;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Caveat', cursive;
+      font-size: 1.35rem;
+      color: var(--text);
+      background: #000;
+      line-height: var(--line-height);
+      min-height: 100%;
+    }
+
+    .journal-wrapper {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 4rem 1rem 4rem;
+    }
+
+    .journal-title {
+      display: block;
+      text-align: center;
+      margin-bottom: 2rem;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #C9A84C;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .journal-frame {
+      border: 2px solid #111;
+      border-radius: 10px;
+      position: relative;
+      background-color: var(--bg);
+      background-image:
+        repeating-linear-gradient(
+          transparent,
+          transparent calc(var(--line-height) - 1px),
+          var(--line-color) calc(var(--line-height) - 1px),
+          var(--line-color) var(--line-height)
+        );
+      background-attachment: fixed;
+    }
+
+    .page {
+      padding: 4rem 2rem 6rem;
+      min-height: 100vh;
+    }
+
+    /* Stage visibility */
+    .stage { display: none; }
+    .stage.active { display: block; }
+
+    /* Landing */
+    #stage-landing p {
+      margin-bottom: calc(var(--line-height) * 2);
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    button {
+      font-family: 'Caveat', cursive;
+      font-size: 1.2rem;
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      padding: 0.2rem 0;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--line-color);
+    }
+
+    button:hover {
+      text-decoration-color: var(--text);
+    }
+
+    /* Intake */
+    .stem {
+      margin-bottom: var(--line-height);
+      min-height: var(--line-height);
+    }
+
+    textarea {
+      font-family: 'Caveat', cursive;
+      font-size: 1.35rem;
+      line-height: var(--line-height);
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100%;
+      resize: none;
+      overflow: hidden;
+      padding: 0;
+      display: block;
+    }
+
+    textarea::placeholder {
+      color: var(--muted);
+    }
+
+    .continue-btn {
+      margin-top: var(--line-height);
+      text-decoration: none;
+      color: var(--text);
+      transition: opacity 0.2s;
+    }
+
+    .continue-btn:disabled {
+      opacity: 0.25;
+      cursor: default;
+      text-decoration-color: transparent;
+    }
+
+    .continue-btn:not(:disabled):hover {
+      text-decoration-color: var(--text);
+    }
+
+    /* Page turn */
+    #page-turn {
+      display: none;
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      perspective: 1500px;
+    }
+
+    #turn-leaf {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg);
+      background-image:
+        repeating-linear-gradient(
+          transparent,
+          transparent calc(var(--line-height) - 1px),
+          var(--line-color) calc(var(--line-height) - 1px),
+          var(--line-color) var(--line-height)
+        );
+      transform-origin: left center;
+      transform-style: preserve-3d;
+    }
+
+    #turn-leaf.turning {
+      animation: pageTurn 0.7s ease-in-out forwards;
+    }
+
+    @keyframes pageTurn {
+      0%   { transform: rotateY(0deg); opacity: 1; }
+      100% { transform: rotateY(-180deg); opacity: 0; }
+    }
+
+    /* Reconstruction */
+    #reconstruction-text {
+      min-height: var(--line-height);
+      margin-bottom: var(--line-height);
+    }
+
+    /* Start over */
+    #start-over {
+      display: none;
+      margin-top: calc(var(--line-height) * 2);
+    }
+
+    #start-over a {
+      font-family: 'Caveat', cursive;
+      font-size: 1rem;
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: transparent;
+      cursor: pointer;
+    }
+
+    #start-over a:hover {
+      text-decoration-color: var(--muted);
+    }
+
+    /* Cursor blink */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.2em;
+      background: var(--text);
+      margin-left: 1px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="journal-wrapper">
+<div class="journal-title">INHABIT</div>
+<div class="journal-frame">
+<div class="page">
+
+  <!-- Stage 1: Landing -->
+  <div id="stage-landing" class="stage active">
+    <p>Inhabit is a space to step outside your own experience for a moment and into someone else's. Not advice, not therapy — just a spark of empathy. Write honestly. Nothing is saved, and no one will see it but you. The more you share, the better it works.</p>
+    <p>Choose one of these options to get started...</p>
+    <div class="btn-group">
+      <button id="btn-immediate">This just happened</button>
+      <button id="btn-chronic">I've been sitting with this for a while</button>
+    </div>
+  </div>
+
+  <!-- Stage 2: Intake -->
+  <div id="stage-intake" class="stage">
+    <div id="stem-display" class="stem"></div>
+    <textarea id="intake-textarea" rows="3" placeholder=""></textarea>
+    <button class="continue-btn" id="intake-continue" disabled>continue →</button>
+  </div>
+
+  <!-- Stage 4: Reconstruction + Reflection -->
+  <div id="stage-reconstruction" class="stage">
+    <div id="reconstruction-text"></div>
+    <div id="reflection-stem" class="stem" style="display:none;"></div>
+    <textarea id="reflection-textarea" rows="3" placeholder="" style="display:none;"></textarea>
+    <button class="continue-btn" id="reflection-continue" disabled style="display:none;">continue →</button>
+    <div id="start-over"><a onclick="location.reload()">start over</a></div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- Page turn overlay -->
+<div id="page-turn">
+  <div id="turn-leaf"></div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+
+  let openerChoice = null;
+  let history = [];
+  let followUpCount = 0;
+  let currentStem = '';
+  let inPivot = false;
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+
+  function showStage(id) {
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  }
+
+  function typewriter(el, text, msPerChar = 40) {
+    return new Promise(resolve => {
+      let i = 0;
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      el.textContent = '';
+      el.appendChild(cursor);
+
+      function tick() {
+        if (i < text.length) {
+          el.insertBefore(document.createTextNode(text[i]), cursor);
+          i++;
+          setTimeout(tick, msPerChar);
+        } else {
+          cursor.remove();
+          resolve();
+        }
+      }
+      tick();
+    });
+  }
+
+  // Hybrid typewriter for streaming: queue chars from each chunk, ~25ms/char
+  function streamTypewriter(el, reader, decoder) {
+    return new Promise(async resolve => {
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      el.textContent = '';
+      el.appendChild(cursor);
+
+      let charQueue = [];
+      let typing = false;
+      let streamDone = false;
+
+      function drainQueue() {
+        if (charQueue.length === 0) {
+          typing = false;
+          if (streamDone) {
+            cursor.remove();
+            resolve();
+          }
+          return;
+        }
+        typing = true;
+        const ch = charQueue.shift();
+        el.insertBefore(document.createTextNode(ch), cursor);
+        setTimeout(drainQueue, 25);
+      }
+
+      function enqueue(text) {
+        for (const ch of text) charQueue.push(ch);
+        if (!typing) drainQueue();
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          streamDone = true;
+          if (!typing && charQueue.length === 0) {
+            cursor.remove();
+            resolve();
+          }
+          break;
+        }
+        enqueue(decoder.decode(value, { stream: true }));
+      }
+    });
+  }
+
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  // ── Stage 1: Landing ───────────────────────────────────────────────────────
+
+  document.getElementById('btn-immediate').addEventListener('click', () => {
+    openerChoice = 'immediate';
+    startIntake();
+  });
+
+  document.getElementById('btn-chronic').addEventListener('click', () => {
+    openerChoice = 'chronic';
+    startIntake();
+  });
+
+  // ── Stage 2: Intake ────────────────────────────────────────────────────────
+
+  function startIntake() {
+    showStage('stage-intake');
+    const firstStem = openerChoice === 'immediate'
+      ? 'The moment I keep coming back to is...'
+      : 'What I\'ve been carrying for a while that I can\'t let go of is...';
+    showStem(firstStem);
+  }
+
+  async function showStem(text) {
+    currentStem = text;
+    inPivot = (text === 'What I think is really going on with them is...');
+    const stemEl = document.getElementById('stem-display');
+    const textarea = document.getElementById('intake-textarea');
+    const btn = document.getElementById('intake-continue');
+
+    textarea.value = '';
+    textarea.style.height = 'auto';
+    btn.disabled = true;
+
+    await typewriter(stemEl, text);
+    textarea.focus();
+  }
+
+  const intakeTextarea = document.getElementById('intake-textarea');
+  intakeTextarea.addEventListener('input', function() {
+    autoResize(this);
+    const btn = document.getElementById('intake-continue');
+    btn.disabled = this.value.trim().length < 30;
+  });
+
+  document.getElementById('intake-continue').addEventListener('click', onIntakeContinue);
+
+  async function onIntakeContinue() {
+    const textarea = document.getElementById('intake-textarea');
+    const btn = document.getElementById('intake-continue');
+    const response = textarea.value.trim();
+
+    history.push({ stem: currentStem, response });
+
+    btn.disabled = true;
+    textarea.disabled = true;
+
+    if (inPivot) {
+      // Done with intake — page turn then reconstruct
+      triggerPageTurn();
+      return;
+    }
+
+    // Check if we should go to pivot
+    if (followUpCount >= 2) {
+      showStem('What I think is really going on with them is...');
+      textarea.disabled = false;
+      return;
+    }
+
+    // Ask API for next stem
+    let apiResult;
+    try {
+      const res = await fetch('/api/intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history, openerChoice }),
+      });
+      apiResult = await res.json();
+    } catch (e) {
+      // On error, fall through to pivot
+      apiResult = { done: true };
+    }
+
+    textarea.disabled = false;
+
+    if (apiResult.done || followUpCount >= 2) {
+      showStem('What I think is really going on with them is...');
+    } else {
+      followUpCount++;
+      showStem(apiResult.stem);
+    }
+  }
+
+  // ── Stage 3: Page Turn ─────────────────────────────────────────────────────
+
+  function triggerPageTurn() {
+    document.getElementById('page-turn').style.display = 'block';
+    const leaf = document.getElementById('turn-leaf');
+    leaf.classList.add('turning');
+    leaf.addEventListener('animationend', async () => {
+      // Hide overlay
+      document.getElementById('page-turn').style.display = 'none';
+      // Show reconstruction stage
+      showStage('stage-reconstruction');
+      await doReconstruction();
+    }, { once: true });
+  }
+
+  // ── Stage 4: Reconstruction + Reflection ───────────────────────────────────
+
+  async function doReconstruction() {
+    const textEl = document.getElementById('reconstruction-text');
+
+    const res = await fetch('/api/reconstruct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ history, openerChoice }),
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    await streamTypewriter(textEl, reader, decoder);
+
+    // 2.5 second pause
+    await sleep(2500);
+
+    // Show reflection stem
+    const reflectionStemEl = document.getElementById('reflection-stem');
+    reflectionStemEl.style.display = 'block';
+    await typewriter(reflectionStemEl, 'What I\'m sitting with now is...');
+
+    const reflTextarea = document.getElementById('reflection-textarea');
+    const reflBtn = document.getElementById('reflection-continue');
+    reflTextarea.style.display = 'block';
+    reflBtn.style.display = 'inline-block';
+    reflTextarea.focus();
+  }
+
+  const reflTextarea = document.getElementById('reflection-textarea');
+  reflTextarea.addEventListener('input', function() {
+    autoResize(this);
+    const btn = document.getElementById('reflection-continue');
+    btn.disabled = this.value.trim().length < 30;
+  });
+
+  document.getElementById('reflection-continue').addEventListener('click', () => {
+    // App goes quiet
+    document.getElementById('reflection-textarea').style.display = 'none';
+    document.getElementById('reflection-continue').style.display = 'none';
+    document.getElementById('start-over').style.display = 'block';
+  });
+</script>
+</body>
+</html>
