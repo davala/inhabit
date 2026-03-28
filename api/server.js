@@ -75,46 +75,62 @@ function formatHistoryForCall2(history, openerChoice) {
 }
 
 app.post('/api/intake', async (req, res) => {
-  const { history, openerChoice } = req.body;
+  try {
+    const { history, openerChoice } = req.body;
 
-  const userMessage = formatHistoryForCall1(history);
+    const userMessage = formatHistoryForCall1(history);
 
-  const response = await client.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 256,
-    system: CALL_1_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
-  });
+    const response = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 256,
+      system: CALL_1_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }],
+    });
 
-  const text = response.content[0].text.trim();
-  const result = JSON.parse(text);
-  res.json(result);
+    let text = response.content[0].text.trim();
+    // Strip markdown code fences if Claude wrapped the JSON
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const result = JSON.parse(text);
+    res.json(result);
+  } catch (err) {
+    console.error('Error in /api/intake:', err.message);
+    res.status(500).json({ error: true });
+  }
 });
 
 app.post('/api/reconstruct', async (req, res) => {
-  const { history, openerChoice } = req.body;
+  try {
+    const { history, openerChoice } = req.body;
 
-  const userMessage = formatHistoryForCall2(history, openerChoice);
+    const userMessage = formatHistoryForCall2(history, openerChoice);
 
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Transfer-Encoding', 'chunked');
-  res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Cache-Control', 'no-cache');
 
-  const stream = await client.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 512,
-    system: CALL_2_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
-    stream: true,
-  });
+    const stream = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 512,
+      system: CALL_2_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }],
+      stream: true,
+    });
 
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-      res.write(event.delta.text);
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        res.write(event.delta.text);
+      }
+    }
+
+    res.end();
+  } catch (err) {
+    console.error('Error in /api/reconstruct:', err.message);
+    if (!res.headersSent) {
+      res.status(500).end();
+    } else {
+      res.end();
     }
   }
-
-  res.end();
 });
 
 const PORT = process.env.PORT || 3000;

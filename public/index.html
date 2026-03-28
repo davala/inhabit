@@ -361,6 +361,16 @@
     return new Promise(r => setTimeout(r, ms));
   }
 
+  function showError() {
+    // Find whichever stage is active and append the error message
+    const active = document.querySelector('.stage.active');
+    const el = document.createElement('p');
+    el.textContent = 'An error occurred, please refresh the page and try again.';
+    el.style.color = 'var(--muted)';
+    el.style.marginTop = 'var(--line-height)';
+    active.appendChild(el);
+  }
+
   // ── Stage 1: Landing ───────────────────────────────────────────────────────
 
   document.getElementById('btn-immediate').addEventListener('click', () => {
@@ -438,10 +448,12 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ history, openerChoice }),
       });
+      if (!res.ok) throw new Error('API error');
       apiResult = await res.json();
+      if (apiResult.error) throw new Error('API error');
     } catch (e) {
-      // On error, fall through to pivot
-      apiResult = { done: true };
+      showError();
+      return;
     }
 
     textarea.disabled = false;
@@ -474,16 +486,22 @@
   async function doReconstruction() {
     const textEl = document.getElementById('reconstruction-text');
 
-    const res = await fetch('/api/reconstruct', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ history, openerChoice }),
-    });
+    try {
+      const res = await fetch('/api/reconstruct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history, openerChoice }),
+      });
+      if (!res.ok) throw new Error('API error');
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
 
-    await streamTypewriter(textEl, reader, decoder);
+      await streamTypewriter(textEl, reader, decoder);
+    } catch (e) {
+      showError();
+      return;
+    }
 
     // 2.5 second pause
     await sleep(2500);
