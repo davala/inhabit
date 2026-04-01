@@ -352,11 +352,13 @@
 
   document.getElementById('btn-immediate').addEventListener('click', () => {
     openerChoice = 'immediate';
+    document.getElementById('intake-textarea').focus();
     startIntake();
   });
 
   document.getElementById('btn-chronic').addEventListener('click', () => {
     openerChoice = 'chronic';
+    document.getElementById('intake-textarea').focus();
     startIntake();
   });
 
@@ -398,6 +400,7 @@
   async function onIntakeContinue() {
     const textarea = document.getElementById('intake-textarea');
     const btn = document.getElementById('intake-continue');
+    textarea.focus();
     const response = textarea.value.trim();
 
     history.push({ stem: currentStem, response });
@@ -488,6 +491,7 @@
     // Show reflection stem
     const reflectionStemEl = document.getElementById('reflection-stem');
     reflectionStemEl.style.display = 'block';
+    reflectionStemEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     await typewriter(reflectionStemEl, 'What I\'m sitting with now is...');
 
     const reflTextarea = document.getElementById('reflection-textarea');
