@@ -381,6 +381,7 @@
     textarea.style.height = 'auto';
     btn.disabled = true;
 
+    stemEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     await typewriter(stemEl, text);
     textarea.focus();
   }
