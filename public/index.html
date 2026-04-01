@@ -188,6 +188,18 @@
       text-decoration-color: var(--muted);
     }
 
+    /* Textarea pulse */
+    @keyframes textareaPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+      25%  { box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.35); }
+      75%  { box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.35); }
+      100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+    }
+
+    textarea.pulse {
+      animation: textareaPulse 1.5s ease forwards;
+    }
+
     /* Cursor blink */
     .cursor {
       display: inline-block;
@@ -338,6 +350,13 @@
     return new Promise(r => setTimeout(r, ms));
   }
 
+  function pulseTextarea(el) {
+    el.classList.remove('pulse');
+    el.getBoundingClientRect(); // force reflow so re-adding the class retriggers animation
+    el.classList.add('pulse');
+    el.addEventListener('animationend', () => el.classList.remove('pulse'), { once: true });
+  }
+
   function showError() {
     // Find whichever stage is active and append the error message
     const active = document.querySelector('.stage.active');
@@ -352,13 +371,11 @@
 
   document.getElementById('btn-immediate').addEventListener('click', () => {
     openerChoice = 'immediate';
-    document.getElementById('intake-textarea').focus();
     startIntake();
   });
 
   document.getElementById('btn-chronic').addEventListener('click', () => {
     openerChoice = 'chronic';
-    document.getElementById('intake-textarea').focus();
     startIntake();
   });
 
@@ -386,6 +403,7 @@
     stemEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     await typewriter(stemEl, text);
     textarea.focus();
+    pulseTextarea(textarea);
   }
 
   const intakeTextarea = document.getElementById('intake-textarea');
@@ -400,7 +418,6 @@
   async function onIntakeContinue() {
     const textarea = document.getElementById('intake-textarea');
     const btn = document.getElementById('intake-continue');
-    textarea.focus();
     const response = textarea.value.trim();
 
     history.push({ stem: currentStem, response });
@@ -499,6 +516,7 @@
     reflTextarea.style.display = 'block';
     reflBtn.style.display = 'inline-block';
     reflTextarea.focus();
+    pulseTextarea(reflTextarea);
   }
 
   const reflTextarea = document.getElementById('reflection-textarea');
